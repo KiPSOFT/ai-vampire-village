@@ -6,9 +6,11 @@ const AGENT_VOTE_MAX_MS = 5 * 60 * 1000;
 const KICK_VOTE_MS = 90 * 1000;
 
 export class SimulationEngine {
-  constructor(onGameEndCallback) {
+  constructor(onGameEndCallback, onViewerVote) {
     /** @type {Function|null} */
     this.onGameEndCallback = onGameEndCallback || null;
+    /** @type {Function|null} */
+    this.onViewerVote = onViewerVote || null;
     /** @type {Map<string, object>} */
     this.agents = new Map();
     this.currentPhase = PHASES.PRE_GAME;
@@ -128,7 +130,9 @@ export class SimulationEngine {
     this.currentPhase = PHASES.DAY;
     this.phaseEndTime = Date.now() + 5 * 60 * 1000; // 5 minutes
     this.dayCount++;
-    console.log(`[DAY ${this.dayCount}] Phase started.`);
+    const dayAnnouncement = `[${this.dayCount}. Gün / Day ${this.dayCount}]`;
+    console.log(`${dayAnnouncement} Phase started.`);
+    this.pushDayMessage(dayAnnouncement);
     
     if (this.lastVictim) {
       const dawnMsg = `[SYSTEM]: Dawn has come. ${this.lastVictim.name} was found dead during the night.`;
@@ -360,6 +364,11 @@ export class SimulationEngine {
     if (target) {
       this.voteVoters.add(voterKey);
       this.votes.set(target.id, (this.votes.get(target.id) || 0) + 1);
+
+      if (isViewer && this.onViewerVote) {
+        this.onViewerVote(voterLabel, target.name);
+      }
+
       this.voteLog.push({
         voter: voterLabel,
         target: target.name,

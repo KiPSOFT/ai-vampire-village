@@ -10,8 +10,10 @@ import { getOpenRouterDecision } from './api/openrouter.mjs';
 import { getGroqDecision } from './api/groq.mjs';
 import { GRID_SIZE, AGENT_PERSONAS, COLORS, PHASES, ROLES, ZONES } from '../shared/types.mjs';
 import { startKickBot } from './kick-bot.mjs';
+import { initDb, createGameRecord, updateGameResult, addAgentGameStat, addViewerVote, getGlobalScores } from './db.mjs';
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+initDb();
 
 // ─── Config from env ───
 const DEFAULT_PROVIDER = process.env.DEFAULT_PROVIDER || 'ollama';
@@ -37,8 +39,7 @@ const io = new Server(httpServer, { cors: { origin: '*' } });
 
 // ─── Simulation state ───
 let engine = null;
-let villagerScore = 0;
-let vampireScore = 0;
+let currentGameId = null;
 const logs = [];
 const MAX_LOGS = 200;
 let lastAnnouncedDay = 0;
@@ -67,46 +68,64 @@ function broadcastState() {
     });
   }
 
+  const { villagerWins, vampireWins } = getGlobalScores();
+
   io.emit('STATE_UPDATE', {
     serverTime: Date.now(),
     agents: engine ? engine.getAllAgents() : [],
     currentPhase: engine ? engine.currentPhase : 'PRE_GAME',
+    dayCount: engine ? engine.dayCount : 0,
     phaseEndTime: engine ? engine.phaseEndTime : 0,
     votes: voteState,
     voteLog: engine ? (engine.voteLog || []) : [],
     votingKickOpen: engine ? !!engine.votingKickOpen : false,
     voteResult: engine ? engine.lastVotingResult : null,
-    villagerScore: engine ? engine.villagerScore : 0,
-    vampireScore: engine ? engine.vampireScore : 0
+    villagerScore: villagerWins,
+    vampireScore: vampireWins
   });
 }
 
 // ─── Initialize Game ───
 function initializeGame() {
-  // Önceki skorları koru
-  const prevVillagerScore = engine ? engine.villagerScore : 0;
-  const prevVampireScore = engine ? engine.vampireScore : 0;
-  
   // Yeni engine instance'ı oluştur
-  engine = new SimulationEngine((winner, vScore, vamScore) => {
-    console.log(`[GAME END] Winner: ${winner} | Score - Villagers: ${vScore}, Vampire: ${vamScore}`);
-    addLog('system', `[GAME OVER] ${winner === 'villagers' ? 'VILLAGERS WON' : 'VAMPIRE WON'}! Score - Villagers: ${vScore}, Vampire: ${vamScore}`, 'System');
-    if (sendToKickFn) {
-      const winnerText = winner === 'villagers' ? 'Villagers' : 'Vampire';
-      sendToKickFn('System', 'Kick', `🏁 Game Over! Winner: ${winnerText}. Score => Villagers: ${vScore}, Vampire: ${vamScore}`);
+  engine = new SimulationEngine(
+    (winner, vScore, vamScore) => {
+      console.log(`[GAME END] Winner: ${winner} | Score - Villagers: ${vScore}, Vampire: ${vamScore}`);
+      
+      // DB'ye oyun sonucunu yaz
+      if (currentGameId) {
+        updateGameResult(currentGameId, winner, engine.dayCount);
+        // Her ajanın istatistiğini yaz
+        engine.getAllAgents().forEach(agent => {
+          const isWinner = (winner === 'villagers' && agent.role === ROLES.INNOCENT) || 
+                           (winner === 'vampire' && agent.role === ROLES.VAMPIRE);
+          addAgentGameStat(currentGameId, agent.name, agent.model, agent.role, isWinner);
+        });
+      }
+
+      addLog('system', `[GAME OVER] ${winner === 'villagers' ? 'VILLAGERS WON' : 'VAMPIRE WON'}! Score - Villagers: ${vScore}, Vampire: ${vamScore}`, 'System');
+      if (sendToKickFn) {
+        const winnerText = winner === 'villagers' ? 'Villagers' : 'Vampire';
+        sendToKickFn('System', 'Kick', `🏁 Game Over! Winner: ${winnerText}. Score => Villagers: ${vScore}, Vampire: ${vamScore}`);
+      }
+      // 5 saniye sonra yeni oyun başlat
+      setTimeout(() => {
+        console.log('[GAME] Yeni oyun başlatılıyor...');
+        initializeGame();
+      }, 5000);
+    },
+    (voterName, targetName) => {
+      // İzleyici oyu DB'ye kaydet
+      if (currentGameId) {
+        addViewerVote(currentGameId, voterName, targetName);
+      }
     }
-    // 5 saniye sonra yeni oyun başlat
-    setTimeout(() => {
-      console.log('[GAME] Yeni oyun başlatılıyor...');
-      initializeGame();
-    }, 5000);
-  });
+  );
   
-  // Skorları koru
-  engine.villagerScore = prevVillagerScore;
-  engine.vampireScore = prevVampireScore;
+  // DB'de yeni oyun kaydı oluştur
+  currentGameId = createGameRecord();
   
-  const roles = [ROLES.VAMPIRE, ROLES.INNOCENT, ROLES.INNOCENT, ROLES.INNOCENT, ROLES.INNOCENT];
+  const roles = [ROLES.VAMPIRE, ROLES.INNOCENT, ROLES.INNOCENT, ROLES.INNOCENT, ROLES.INNOCENT, ROLES.INNOCENT];
   roles.sort(() => Math.random() - 0.5);
 
   AGENT_PERSONAS.forEach((persona, i) => {
@@ -114,8 +133,8 @@ function initializeGame() {
       id: Math.random().toString(36).substring(7),
       name: persona.name,
       model: getNextOpenRouterModel(),
-      color: COLORS[i],
-      position: { x: 5, y: 5 }, // Start at Village Square
+      color: COLORS[i] || '#ffffff',
+      position: { x: 5, y: 5 }, // All start at Village Square
       isActive: true,
       history: [],
       roleDescription: persona.description,
@@ -311,15 +330,21 @@ io.on('connection', (socket) => {
       if (a) voteStateInit[a.name] = count;
     });
   }
+
+  const { villagerWins, vampireWins } = getGlobalScores();
+
   socket.emit('STATE_UPDATE', { 
     serverTime: Date.now(),
     agents: engine ? engine.getAllAgents() : [],
     currentPhase: engine ? engine.currentPhase : 'PRE_GAME',
+    dayCount: engine ? engine.dayCount : 0,
     phaseEndTime: engine ? engine.phaseEndTime : 0,
     votes: voteStateInit,
     voteLog: engine ? (engine.voteLog || []) : [],
     votingKickOpen: engine ? !!engine.votingKickOpen : false,
-    voteResult: engine ? engine.lastVotingResult : null
+    voteResult: engine ? engine.lastVotingResult : null,
+    villagerScore: villagerWins,
+    vampireScore: vampireWins
   });
   socket.emit('LOGS_INIT', logs);
 

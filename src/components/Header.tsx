@@ -3,6 +3,8 @@ import { Box, Plus } from 'lucide-react';
 
 interface HeaderProps {
   onNewAgent: () => void;
+  currentPhase?: string;
+  dayCount?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({ onNewAgent }) => {

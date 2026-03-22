@@ -8,6 +8,7 @@ import { io } from 'socket.io-client';
 
 const socket = io('http://localhost:3001');
 
+/*
 export const AGENT_PERSONAS = [
   { name: "Asta", description: "A regular barista by day, the city's most dangerous white-hat hacker by night." },
   { name: "Odi", description: "A librarian who prefers the smell of old books to people, quiet but memorizes every detail around." },
@@ -20,6 +21,7 @@ export const AGENT_PERSONAS = [
   { name: "Echo", description: "A born leader and entrepreneur who ruthlessly destroys obstacles on the path to success with pure intellect." },
   { name: "Nova", description: "A nostalgia enthusiast who constantly listens to 80s music and always seems ready to pull a cassette player from her pocket." }
 ];
+*/
 
 export interface ServerConfig {
   ollamaModel: string;
@@ -31,6 +33,7 @@ export interface ServerConfig {
 export default function App() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [currentPhase, setCurrentPhase] = useState<string>('PRE_GAME');
+  const [dayCount, setDayCount] = useState<number>(0);
   const [phaseEndTime, setPhaseEndTime] = useState<number>(0);
   const [voteLog, setVoteLog] = useState<Array<{ voter: string; target: string; source?: string }>>([]);
   const [votingKickOpen, setVotingKickOpen] = useState(false);
@@ -49,9 +52,10 @@ export default function App() {
       setServerConfig(config);
     });
 
-    socket.on('STATE_UPDATE', (data: { agents: Agent[], currentPhase?: string, phaseEndTime?: number, votes?: Record<string, number>, voteLog?: Array<{ voter: string; target: string; source?: string }>, votingKickOpen?: boolean, voteResult?: any, serverTime?: number, villagerScore?: number, vampireScore?: number }) => {
+    socket.on('STATE_UPDATE', (data: { agents: Agent[], currentPhase?: string, dayCount?: number, phaseEndTime?: number, votes?: Record<string, number>, voteLog?: Array<{ voter: string; target: string; source?: string }>, votingKickOpen?: boolean, voteResult?: any, serverTime?: number, villagerScore?: number, vampireScore?: number }) => {
       setAgents(data.agents);
       if (data.currentPhase) setCurrentPhase(data.currentPhase);
+      if (typeof data.dayCount === 'number') setDayCount(data.dayCount);
       if (data.phaseEndTime) setPhaseEndTime(data.phaseEndTime);
       setVoteLog(data.voteLog ?? []);
       setVotingKickOpen(!!data.votingKickOpen);
@@ -95,7 +99,7 @@ export default function App() {
 
   return (
     <>
-      {!isOverlay && <Header onNewAgent={() => setShowModal(true)} />}
+      {!isOverlay && <Header onNewAgent={() => setShowModal(true)} currentPhase={currentPhase} dayCount={dayCount} />}
       <main className="main-content" style={isOverlay ? { padding: 0 } : undefined}>
         <SimulationCanvas 
           agents={agents} 

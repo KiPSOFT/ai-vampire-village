@@ -22,6 +22,10 @@ export const AGENT_PERSONAS = [
   {
     name: "Silas",
     description: "You are Silas, the nervous village night watchman. Your primary goal is to find the vampire. Because you work in the dark, you are hyper-vigilant and suspicious of everyone. You don't trust anyone's alibi and often point out small, creepy details you noticed at night."
+  },
+  {
+    name: "Elara",
+    description: "You are Elara, the village healer and herbalist. Your primary goal is to find the vampire because protecting lives is your duty. You are highly observant of physical details like nervous sweating, pale skin, or exhaustion. You speak in a calm, soothing tone, but you ask very sharp, piercing medical questions to catch people in lies."
   }
 ];
 
@@ -30,7 +34,8 @@ export const ZONES = {
   "Marketplace": { x: 1, y: 1 },    // Top-Left Corner
   "Fields": { x: 9, y: 1 },         // Top-Right Corner
   "Blacksmith's Forge": { x: 1, y: 9 }, // Bottom-Left Corner
-  "Forest Edge": { x: 9, y: 9 }     // Bottom-Right Corner
+  "Forest Edge": { x: 9, y: 9 },    // Bottom-Right Corner
+  "Healer's Hut": { x: 5, y: 1 }     // Top-Center
 };
 
 export const PHASES = {
@@ -46,4 +51,4 @@ export const ROLES = {
   INNOCENT: "INNOCENT"
 };
 
-export const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#0ea5e9'];
+export const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#0ea5e9', '#a855f7'];

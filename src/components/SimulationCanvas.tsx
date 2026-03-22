@@ -46,6 +46,7 @@ loadSprite('vampire', '/vampire.png');
 interface SimulationCanvasProps {
   agents: Agent[];
   currentPhase: string;
+  dayCount?: number;
   phaseEndTime: number;
   voteLog?: Array<{ voter: string; target: string; source?: string }>;
   votingKickOpen?: boolean;
@@ -55,7 +56,7 @@ interface SimulationCanvasProps {
   vampireScore?: number;
 }
 
-export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({ agents, currentPhase, phaseEndTime, voteLog = [], votingKickOpen = false, voteResult, serverDrift = 0, villagerScore = 0, vampireScore = 0 }) => {
+export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({ agents, currentPhase, dayCount, phaseEndTime, voteLog = [], votingKickOpen = false, voteResult, serverDrift = 0, villagerScore = 0, vampireScore = 0 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [timeLeft, setTimeLeft] = React.useState('');
 
@@ -572,7 +573,7 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({ agents, curr
         </div>
       )}
       <div style={{ position: 'absolute', top: 16, left: 16, zIndex: 10, background: 'rgba(0,0,0,0.6)', padding: '8px 16px', borderRadius: 8, color: 'white', fontFamily: 'Inter', fontWeight: 'bold' }}>
-        Faz: {currentPhase} | {timeLeft}
+        Faz: {dayCount ? `${dayCount}. Gün / Day ${dayCount} ` : ''}({currentPhase}) | {timeLeft}
       </div>
       <div style={{ position: 'absolute', bottom: 16, left: 16, zIndex: 10, background: 'rgba(0,0,0,0.6)', padding: '12px 20px', borderRadius: 8, color: 'white', fontFamily: 'Inter', fontWeight: 'bold' }}>
         <div style={{ fontSize: '14px', marginBottom: '4px', color: '#aaa' }}>OVERALL SCORE</div>
