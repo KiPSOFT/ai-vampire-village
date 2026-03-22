@@ -11,7 +11,7 @@ import { getGroqDecision } from './api/groq.mjs';
 import { GRID_SIZE, AGENT_PERSONAS, COLORS, PHASES, ROLES, ZONES } from '../shared/types.mjs';
 import { startKickBot } from './kick-bot.mjs';
 
-dotenv.config({ path: path.resolve(process.cwd(), 'server/.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 // ─── Config from env ───
 const DEFAULT_PROVIDER = process.env.DEFAULT_PROVIDER || 'ollama';
