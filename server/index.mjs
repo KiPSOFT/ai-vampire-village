@@ -87,6 +87,7 @@ function broadcastState() {
 
 // ─── Initialize Game ───
 function initializeGame() {
+  currentSpeakerIndex = 0; // Reset speaker index for new game
   // Yeni engine instance'ı oluştur
   engine = new SimulationEngine(
     (winner, vScore, vamScore) => {
@@ -172,6 +173,7 @@ let currentSpeakerIndex = 0;
 // 1. Phase Check Loop (1hz Fast-loop)
 setInterval(() => {
   if (engine && engine.checkPhaseTransition()) {
+    currentSpeakerIndex = 0; // Reset speaker index on any phase change
     if (engine.currentPhase === PHASES.DAY && engine.dayCount > lastAnnouncedDay) {
       lastAnnouncedDay = engine.dayCount;
       if (sendToKickFn) {
