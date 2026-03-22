@@ -104,6 +104,7 @@ export default function App() {
         <SimulationCanvas 
           agents={agents} 
           currentPhase={currentPhase} 
+          dayCount={dayCount}
           phaseEndTime={phaseEndTime} 
           voteLog={voteLog} 
           votingKickOpen={votingKickOpen} 
