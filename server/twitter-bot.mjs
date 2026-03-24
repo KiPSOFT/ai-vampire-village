@@ -1,5 +1,10 @@
 import OAuth from 'oauth-1.0a';
 import crypto from 'crypto';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// .env dosyasını yükle (ES modules'da import'lar önce çalıştığı için burada da yüklemeliyiz)
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 const KICK_URL = 'kick.com/aivampirevillage';
 
