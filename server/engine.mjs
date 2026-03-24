@@ -470,7 +470,8 @@ export class SimulationEngine {
     }
 
     context += `\n[ CONVERSATION GUIDELINES ]\n`;
-    context += `- DO NOT REPEAT yourself. If you already stated your alibi, do not repeat it unless someone specifically asks.\n`;
+    context += `- DO NOT REPEAT yourself. If you already stated your location, do not repeat it unless someone specifically asks.\n`;
+    context += `- AVOID ROBOTIC PHRASING. Do not constantly ask "What is your alibi?". Instead, use natural detective questions like "Where did you spend the night?", "Who did you see?", or "I was at the Forest, where were you?".\n`;
     context += `- AVOID REPETITIVE SENTIMENT. If the village is already suspicious of someone, provide new reasons or ask for their defense instead of just agreeing.\n`;
     context += `- MOVE THE STORY FORWARD. Ask specific players about their locations or point out inconsistencies in the "DISCUSSION HISTORY" above.\n`;
     context += `- BE DYNAMIC. Do not use the same phrasing every turn. If you have nothing new to say, ask a strategic question to expose someone.\n`;
