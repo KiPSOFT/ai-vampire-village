@@ -456,18 +456,25 @@ export class SimulationEngine {
     // --- REGULAR DAY PHASE ---
     const allowedZones = Object.keys(ZONES).join(', ');
     
+    context += `[ YOUR ROLE ]\n`;
     if (agent.role === ROLES.INNOCENT) {
-      context += `[ YOUR ROLE ]\nYou are an INNOCENT villager. Last night you slept alone in "${agent.memoryZone || 'Marketplace'}".\n`;
+      context += `You are an INNOCENT villager. Last night you slept alone in "${agent.memoryZone || 'Marketplace'}".\n`;
       context += `(IMPORTANT: The ONLY valid map zones are: [${allowedZones}]. Do not invent places like home, river, etc. Use only these zones.)\n`;
       context += `The vampire is among you and is lying. Analyze past messages, cross-question others, and expose contradictions.\n`;
     } else if (agent.role === ROLES.VAMPIRE) {
-      context += `[ YOUR ROLE ]\nYou are the hidden VAMPIRE!\n`;
+      context += `You are the hidden VAMPIRE!\n`;
       context += `If questioned about where you were last night, claim you slept alone in "${agent.memoryZone || 'Marketplace'}" (this is your lie).\n`;
       context += `(IMPORTANT: The ONLY valid map zones are: [${allowedZones}]. Do not invent places like home, river, etc. Use only these zones.)\n`;
       context += `Your goal: redirect suspicion onto innocents, create conflict, and protect yourself.\n`;
     }
 
-    context += `Do NOT get distracted by your profession. Your ONLY topic of conversation is the murder and finding the vampire. Use your personality ONLY as a tone of voice.\n`;
+    context += `\n[ CONVERSATION GUIDELINES ]\n`;
+    context += `- DO NOT REPEAT yourself. If you already stated your alibi, do not repeat it unless someone specifically asks.\n`;
+    context += `- AVOID REPETITIVE SENTIMENT. If the village is already suspicious of someone, provide new reasons or ask for their defense instead of just agreeing.\n`;
+    context += `- MOVE THE STORY FORWARD. Ask specific players about their locations or point out inconsistencies in the "DISCUSSION HISTORY" above.\n`;
+    context += `- BE DYNAMIC. Do not use the same phrasing every turn. If you have nothing new to say, ask a strategic question to expose someone.\n`;
+    
+    context += `\nDo NOT get distracted by your profession. Your ONLY topic of conversation is the murder and finding the vampire. Use your personality ONLY as a tone of voice.\n`;
     
     context += `\n[ YOUR TURN ]\nSend ONE message either to a specific player or to the whole village.\n`;
     context += `You MUST follow this exact JSON format:\n`;
