@@ -54,21 +54,21 @@ class TwitterBot {
 
     const requestData = {
       url: 'https://api.twitter.com/2/tweets',
-      method: 'POST',
-      data: { text: finalText }
+      method: 'POST'
     };
 
+    // ÖNEMLİ: Twitter API v2'de JSON body gönderirken, body içeriği OAuth imzasına DAHİL EDİLMEZ.
+    // Sadece URL ve Method imzalanır.
     const authHeader = this.oauth.toHeader(this.oauth.authorize(requestData, this.token));
     
     console.log('[TWITTER DEBUG] Request URL:', requestData.url);
-    console.log('[TWITTER DEBUG] Auth Header:', authHeader.Authorization.substring(0, 50) + '...');
     console.log('[TWITTER DEBUG] Tweet text length:', finalText.length);
 
     try {
       const response = await fetch(requestData.url, {
         method: 'POST',
         headers: {
-          'Authorization': authHeader.Authorization,
+          ...authHeader,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ text: finalText })
