@@ -11,6 +11,7 @@ import { getGroqDecision } from './api/groq.mjs';
 import { GRID_SIZE, AGENT_PERSONAS, COLORS, PHASES, ROLES, ZONES } from '../shared/types.mjs';
 import { startKickBot } from './kick-bot.mjs';
 import { initDb, createGameRecord, updateGameResult, addAgentGameStat, addViewerVote, getGlobalScores } from './db.mjs';
+import { twitterBot } from './twitter-bot.mjs';
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 initDb();
@@ -105,6 +106,10 @@ function initializeGame() {
       }
 
       addLog('system', `[GAME OVER] ${winner === 'villagers' ? 'VILLAGERS WON' : 'VAMPIRE WON'}! Score - Villagers: ${vScore}, Vampire: ${vamScore}`, 'System');
+      
+      // Twitter: Oyun sonu kazanan ve skor tweet'i
+      twitterBot.tweetGameEnd(winner, vScore, vamScore);
+      
       if (sendToKickFn) {
         const winnerText = winner === 'villagers' ? 'Villagers' : 'Vampire';
         sendToKickFn('System', 'Kick', `🏁 Game Over! Winner: ${winnerText}. Score => Villagers: ${vScore}, Vampire: ${vamScore}`);
@@ -153,6 +158,14 @@ function initializeGame() {
   lastAnnouncedExileKey = '';
   broadcastState();
   addLog('system', '[GAME INIT] Started a new Vampire Villager game!', 'System');
+  
+  // Twitter: Yeni oyun başlangıcı tweet'i
+  twitterBot.tweetGameStart(engine.dayCount || 1);
+  
+  // Twitter: Agent isimleri ve modeller tweet'i
+  const agents = engine.getAllAgents();
+  twitterBot.tweetAgents(agents);
+  
   if (sendToKickFn) {
     sendToKickFn('System', 'Kick', '🔁 A new game has started!');
   }
@@ -184,6 +197,10 @@ setInterval(() => {
         const murderKey = `${engine.dayCount}:${engine.lastVictim.id}`;
         if (murderKey !== lastAnnouncedMurderKey) {
           lastAnnouncedMurderKey = murderKey;
+          
+          // Twitter: Gece ölen kişi tweet'i
+          twitterBot.tweetMurdered(engine.lastVictim.name);
+          
           if (sendToKickFn) {
             sendToKickFn('System', 'Kick', `🩸 During the night, ${engine.lastVictim.name} was killed by the vampire.`);
           }
@@ -204,6 +221,10 @@ setInterval(() => {
         const exileKey = `${engine.dayCount}:${engine.lastVotingResult.exiledId}`;
         if (exileKey !== lastAnnouncedExileKey) {
           lastAnnouncedExileKey = exileKey;
+          
+          // Twitter: Gün sonu elenen kişi tweet'i
+          twitterBot.tweetExiled(engine.lastVotingResult.name, engine.lastVotingResult.isVampire);
+          
           if (sendToKickFn) {
             const roleText = engine.lastVotingResult.isVampire ? 'VAMPIRE' : 'INNOCENT';
             sendToKickFn('System', 'Kick', `🪓 Exiled: ${engine.lastVotingResult.name}. Revealed role: ${roleText}.`);
