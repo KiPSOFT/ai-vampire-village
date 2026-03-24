@@ -166,7 +166,7 @@ export function setSendToKick(fn) {
 }
 
 // ─── Simulation tick loop ───
-const TICK_RATE = 3000;
+const TICK_RATE = 5000;
 let isFetching = false;
 let currentSpeakerIndex = 0;
 

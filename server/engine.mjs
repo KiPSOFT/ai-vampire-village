@@ -117,9 +117,8 @@ export class SimulationEngine {
         this.deadAgents.add(victim.id);
         this.getAgent(victim.id).deathReason = 'murdered';
         this.lastVictim = victim;
-        victim.position.x = ZONES["Village Square"].x;
-        victim.position.y = ZONES["Village Square"].y;
-        console.log(`[NIGHT] Vampire randomly killed ${victim.name} on Night 1`);
+        // Keep them at their sleep location
+        console.log(`[NIGHT] Vampire randomly killed ${victim.name} at ${victim.memoryZone} on Night 1`);
       }
     } else {
       this.lastVictim = null; // Vampire will autonomously assign this during TICK
@@ -135,7 +134,7 @@ export class SimulationEngine {
     this.pushDayMessage(dayAnnouncement);
     
     if (this.lastVictim) {
-      const dawnMsg = `[SYSTEM]: Dawn has come. ${this.lastVictim.name} was found dead during the night.`;
+      const dawnMsg = `[SYSTEM]: Dawn has come. ${this.lastVictim.name} was found dead in the ${this.lastVictim.memoryZone || 'Village Square'} during the night.`;
       this.pushDayMessage(dawnMsg);
       console.log(dawnMsg);
     }
@@ -276,9 +275,8 @@ export class SimulationEngine {
              this.deadAgents.add(victim.id);
              this.getAgent(victim.id).deathReason = 'murdered';
              this.lastVictim = victim;
-             victim.position.x = ZONES["Village Square"].x;
-             victim.position.y = ZONES["Village Square"].y;
-             console.log(`[NIGHT] Vampire API timed out! System forced assassination of ${victim.name}`);
+             // Keep them at their sleep location
+             console.log(`[NIGHT] Vampire API timed out! System forced assassination of ${victim.name} at ${victim.memoryZone}`);
            }
         }
         this.startDayPhase();
@@ -387,8 +385,14 @@ export class SimulationEngine {
     let context = ``;
 
     if (this.deadAgents.size > 0) {
-      const deadNames = Array.from(this.deadAgents).map(id => this.getAgent(id)?.name).filter(Boolean).join(', ');
-      context += `[ SYSTEM ]: DEAD BODIES IN THE SQUARE (YOU CANNOT TALK TO THE DEAD): ${deadNames}.\n\n`;
+      const deadInfo = Array.from(this.deadAgents)
+        .map(id => {
+          const a = this.getAgent(id);
+          return a ? `${a.name} (found in ${a.memoryZone || 'Village Square'})` : null;
+        })
+        .filter(Boolean)
+        .join(', ');
+      context += `[ SYSTEM ]: DEAD BODIES: ${deadInfo}. (YOU CANNOT TALK TO THE DEAD).\n\n`;
     }
 
     if (this.currentPhase === PHASES.NIGHT) {
@@ -492,9 +496,8 @@ export class SimulationEngine {
         this.deadAgents.add(targetAgent.id);
         this.getAgent(targetAgent.id).deathReason = 'murdered';
         this.lastVictim = targetAgent;
-        targetAgent.position.x = ZONES["Village Square"].x;
-        targetAgent.position.y = ZONES["Village Square"].y;
-        console.log(`[NIGHT] Vampire assassinated ${targetAgent.name}`);
+        // Keep them at their sleep location
+        console.log(`[NIGHT] Vampire assassinated ${targetAgent.name} at ${targetAgent.memoryZone}`);
       }
       if (decision.alibiZone) {
         agent.memoryZone = decision.alibiZone;

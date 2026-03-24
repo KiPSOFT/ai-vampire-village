@@ -145,9 +145,9 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({ agents, curr
         ctx.stroke();
       }
 
-      // Group living agents by position (dead are shown in the memorial row only)
+      // Group all agents by position (dead are also shown at their last position)
       const positionMap = new Map<string, Agent[]>();
-      agents.filter(a => !a.isDead).forEach(agent => {
+      agents.forEach(agent => {
         const key = `${Math.round(agent.position.x)},${Math.round(agent.position.y)}`;
         if (!positionMap.has(key)) positionMap.set(key, []);
         positionMap.get(key)!.push(agent);
@@ -156,42 +156,51 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({ agents, curr
       const bubbleJobs: Array<{ agent: Agent; cx: number; textY: number }> = [];
 
       positionMap.forEach((occupants) => {
-        const aliveCount = occupants.filter(a => !a.isDead).length;
-        let aliveIndex = 0;
+        const totalCount = occupants.length;
+        let occupantIndex = 0;
 
         occupants.forEach((agent) => {
           let cx = offsetX + agent.position.x * cellSize + cellSize / 2;
           let cy = offsetY + agent.position.y * cellSize + cellSize / 2;
 
-          if (!agent.isDead && aliveCount > 1) {
-            const angle = (aliveIndex / aliveCount) * Math.PI * 2;
-            const ringRadius = cellSize * 2.8; // Heavily exploded spread to prevent speech bubble overlapping
-            cx += Math.cos(angle) * ringRadius;
-            cy += Math.sin(angle) * ringRadius;
-
-            // Özel yerleşim istekleri
-            if (agent.name === 'Arthur') {
-              cx -= 55;
-              cy -= 40;
-            } else if (agent.name === 'Barnaby') {
-              cy -= 55;
-              cx -= 40;
-            } else if (agent.name === 'Thomas') {
-              cy -= 55;
-              cx -= 40;
-            } else if (agent.name === 'Kael') {
-              cx -= 40;
-              cy -= 55;
-            } else if (agent.name === 'Silas') {
-              cx -= 15;
+          if (totalCount > 1) {
+            const angle = (occupantIndex / totalCount) * Math.PI * 2;
+            const ringRadius = cellSize * (agent.isDead ? 0.3 : 2.8); // Dead stay closer, alive spread out for bubbles
+            if (!agent.isDead) {
+                // Heavily exploded spread for living to prevent speech bubble overlapping
+                cx += Math.cos(angle) * ringRadius;
+                cy += Math.sin(angle) * ringRadius;
+            } else {
+                // Slight offset for dead bodies so they don't overlap perfectly
+                cx += Math.cos(angle) * (cellSize * 0.4);
+                cy += Math.sin(angle) * (cellSize * 0.4);
             }
 
-            // En üstteki agent'ın konuşma balonunun ekran dışına taşmasını engellemek için biraz aşağı alıyoruz
-            if (Math.sin(angle) < -0.5) {
-              cy += 15;
+            // Özel yerleşim istekleri (sadece canlılar için)
+            if (!agent.isDead) {
+                if (agent.name === 'Arthur') {
+                  cx -= 55;
+                  cy -= 40;
+                } else if (agent.name === 'Barnaby') {
+                  cy -= 55;
+                  cx -= 40;
+                } else if (agent.name === 'Thomas') {
+                  cy -= 55;
+                  cx -= 40;
+                } else if (agent.name === 'Kael') {
+                  cx -= 40;
+                  cy -= 55;
+                } else if (agent.name === 'Silas') {
+                  cx -= 15;
+                }
+
+                // En üstteki agent'ın konuşma balonunun ekran dışına taşmasını engellemek için biraz aşağı alıyoruz
+                if (Math.sin(angle) < -0.5) {
+                  cy += 15;
+                }
             }
 
-            aliveIndex++;
+            occupantIndex++;
           }
 
           const size = cellSize * 1.02;
