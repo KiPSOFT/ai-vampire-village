@@ -28,5 +28,7 @@ server/kick-bot-session
 server/.env
 .env.local
 server/.env.local
+server/village_stats.db
+*.db
 node_modules/
 server/node_modules/
