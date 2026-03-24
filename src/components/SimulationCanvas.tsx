@@ -297,41 +297,6 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({ agents, curr
         }); // End internal occupant loop
       }); // End positionMap loop
 
-      // Memorial row (balonlardan önce; konuşanların balonları üstte kalır)
-      const deadForMemorial = [...agents]
-        .filter(a => a.isDead)
-        .sort((a, b) => a.name.localeCompare(b.name));
-      if (deadForMemorial.length > 0 && currentPhase !== 'VOTING_RESULT') {
-        const rowY = offsetY + availableSize * 0.58 + cellSize * 0.35;
-        const cxMem = offsetX + availableSize / 2;
-        const size = Math.min(cellSize * 1.25, 88);
-        const gap = 20;
-        const totalW = deadForMemorial.length * size + (deadForMemorial.length - 1) * gap;
-        let drawX = cxMem - totalW / 2 + size / 2;
-        deadForMemorial.forEach((agent) => {
-          const imgX = drawX - size / 2;
-          const imgY = rowY - size / 2;
-          const currentAvatar = processedSprites['innocent'];
-          if (currentAvatar) {
-            if (agent.deathReason === 'murdered') {
-              ctx.filter = 'brightness(1000%) grayscale(100%) opacity(85%)';
-            } else {
-              ctx.filter = 'brightness(0%) opacity(85%)';
-            }
-            ctx.drawImage(currentAvatar, imgX, imgY, size, size);
-            ctx.filter = 'none';
-          }
-          ctx.fillStyle = '#c0c0c0';
-          ctx.font = 'bold 20px Inter';
-          ctx.textAlign = 'center';
-          ctx.shadowColor = 'black';
-          ctx.shadowBlur = 4;
-          ctx.fillText(agent.name, drawX, rowY - size / 2 - 8);
-          ctx.shadowBlur = 0;
-          drawX += size + gap;
-        });
-      }
-
       // Balonları tüm avatarların üstünde çizmek için ikinci geçiş (önceki ajanların gövdesi balonu kapatmasın)
       bubbleJobs.forEach(({ agent, cx, textY }) => {
         const engText = agent.lastDecision?.dialogue_en || '';
