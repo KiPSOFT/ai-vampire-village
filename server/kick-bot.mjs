@@ -16,13 +16,18 @@ export async function startKickBot({ engine, setSendToKick, broadcastState, getE
   async function sendToKick(agentName, targetAgent, message) {
     if (!kickClient) return;
     try {
+      // Eğer login başarılı olmamışsa veya kanal hazır değilse bekleyelim
+      if (!kickClient.channelId) {
+        console.warn('[KICK-DEBUG] Uyarı: Kanal ID henüz hazır değil, mesaj bekletiliyor.');
+        return;
+      }
+      
       const targetLabel = targetAgent ? ` -> ${targetAgent}` : '';
-      // Temizlik: Yeni satır karakterlerini kaldır (Kick API'sini bozabiliyor)
       const sanitized = String(message).replace(/[\n\r]+/g, ' '); 
       const textToSend = `[${agentName}${targetLabel}]: ${sanitized}`;
       const truncated = textToSend.length > 400 ? textToSend.substring(0, 397) + '...' : textToSend;
       
-      console.log(`[KICK-DEBUG] Mesaj gönderiliyor... (Uzunluk: ${truncated.length})`);
+      console.log(`[KICK-DEBUG] Mesaj gönderiliyor... (Kanal: ${KICK_CHANNEL})`);
       await kickClient.sendMessage(truncated);
       console.log(`[KICK-DEBUG] Mesaj başarıyla Kick chat'e iletildi!`);
     } catch (e) {
@@ -31,6 +36,7 @@ export async function startKickBot({ engine, setSendToKick, broadcastState, getE
   }
 
   if (!KICK_BEARER || !KICK_XSRF || !KICK_COOKIES) {
+    // ... (mevcut kodun devamı aynı kalabilir)
     console.log('');
     console.log('🔄 Bot Kick bağlantısız çalışıyor (Token eksik). Konsoldan !vote [isim] kullanarak test edebilirsiniz.');
     

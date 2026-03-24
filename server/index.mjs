@@ -159,12 +159,11 @@ function initializeGame() {
   broadcastState();
   addLog('system', '[GAME INIT] Started a new Vampire Villager game!', 'System');
   
-  // Twitter: Yeni oyun başlangıcı tweet'i
-  twitterBot.tweetGameStart(engine.dayCount || 1);
-  
-  // Twitter: Agent isimleri ve modeller tweet'i
+  // Twitter: Birleşik başlangıç tweet'i (Kredi tasarrufu için)
   const agents = engine.getAllAgents();
-  twitterBot.tweetAgents(agents);
+  const agentList = agents.map(a => `${a.name} (${a.model.split('/').pop()})`).join(', ');
+  const startText = `🧛 AI Vampire Village game started!\n\n🌙 Night ${engine.dayCount || 1}\n\n🤖 Agents: ${agentList}\n\nWho will survive?`;
+  twitterBot.postTweet(startText);
   
   if (sendToKickFn) {
     sendToKickFn('System', 'Kick', '🔁 A new game has started!');
