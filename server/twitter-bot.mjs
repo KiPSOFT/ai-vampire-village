@@ -27,8 +27,14 @@ class TwitterBot {
       });
       this.token = { key: this.accessToken, secret: this.accessSecret };
       console.log('✅ Twitter Bot hazır! Tweet atma aktif.');
+      console.log('[TWITTER DEBUG] API Key:', this.apiKey.substring(0, 8) + '...');
+      console.log('[TWITTER DEBUG] Access Token:', this.accessToken.substring(0, 15) + '...');
     } else {
       console.log('🔄 Twitter Bot pasif (API anahtarları eksik).');
+      console.log('[TWITTER DEBUG] API Key var mı:', !!this.apiKey);
+      console.log('[TWITTER DEBUG] API Secret var mı:', !!this.apiSecret);
+      console.log('[TWITTER DEBUG] Access Token var mı:', !!this.accessToken);
+      console.log('[TWITTER DEBUG] Access Secret var mı:', !!this.accessSecret);
     }
   }
 
@@ -53,6 +59,10 @@ class TwitterBot {
     };
 
     const authHeader = this.oauth.toHeader(this.oauth.authorize(requestData, this.token));
+    
+    console.log('[TWITTER DEBUG] Request URL:', requestData.url);
+    console.log('[TWITTER DEBUG] Auth Header:', authHeader.Authorization.substring(0, 50) + '...');
+    console.log('[TWITTER DEBUG] Tweet text length:', finalText.length);
 
     try {
       const response = await fetch(requestData.url, {
@@ -65,6 +75,9 @@ class TwitterBot {
       });
 
       const result = await response.json();
+      
+      console.log('[TWITTER DEBUG] Response status:', response.status);
+      console.log('[TWITTER DEBUG] Response:', JSON.stringify(result).substring(0, 200));
       
       if (response.ok) {
         console.log(`🐦 Tweet atıldı: "${finalText.substring(0, 50)}..."`);
