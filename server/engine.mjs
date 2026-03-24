@@ -105,9 +105,10 @@ export class SimulationEngine {
       const assignedZone = shuffledZones[zIndex % shuffledZones.length] || 'Marketplace';
       zIndex++;
       a.memoryZone = assignedZone;
+      // CRITICAL: Update physical position to the assigned zone immediately
       a.position.x = ZONES[assignedZone].x;
       a.position.y = ZONES[assignedZone].y;
-      console.log(`[ALIBI LOG] ${a.name} slept at ${a.memoryZone}.`);
+      console.log(`[ALIBI LOG] ${a.name} went to sleep at ${a.memoryZone}.`);
     });
 
     if (this.dayCount === 0) {
@@ -117,8 +118,8 @@ export class SimulationEngine {
         this.deadAgents.add(victim.id);
         this.getAgent(victim.id).deathReason = 'murdered';
         this.lastVictim = victim;
-        // Keep them at their sleep location
-        console.log(`[NIGHT] Vampire randomly killed ${victim.name} at ${victim.memoryZone} on Night 1`);
+        // The victim's position is already set to their memoryZone above.
+        console.log(`[NIGHT 1] Vampire randomly killed ${victim.name} at ${victim.memoryZone}`);
       }
     } else {
       this.lastVictim = null; // Vampire will autonomously assign this during TICK
