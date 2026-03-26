@@ -99,7 +99,7 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({ agents, curr
       ctx.clearRect(0, 0, w, h);
 
       // Draw Zone Regions
-      const drawZone = (name: string, zx: number, zy: number, color: string, imgKey: string) => {
+      const drawZone = (name: string, zx: number, zy: number, _color: string, imgKey: string) => {
         const px = offsetX + zx * cellSize;
         const py = offsetY + zy * cellSize;
 

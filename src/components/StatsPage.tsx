@@ -30,6 +30,7 @@ interface RecentGame {
 }
 
 export function StatsPage() {
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
   const [gameStats, setGameStats] = useState<GameStats | null>(null);
   const [modelStats, setModelStats] = useState<ModelStats[]>([]);
   const [recentGames, setRecentGames] = useState<RecentGame[]>([]);
@@ -39,9 +40,9 @@ export function StatsPage() {
     const fetchData = async () => {
       try {
         const [gamesRes, modelsRes, recentRes] = await Promise.all([
-          fetch('http://localhost:3001/api/stats/games'),
-          fetch('http://localhost:3001/api/stats/models'),
-          fetch('http://localhost:3001/api/stats/recent-games?limit=20')
+          fetch(`${API_URL}/api/stats/games`),
+          fetch(`${API_URL}/api/stats/models`),
+          fetch(`${API_URL}/api/stats/recent-games?limit=20`)
         ]);
         
         setGameStats(await gamesRes.json());
