@@ -3,6 +3,7 @@ import { Header } from './components/Header';
 import { ChatterBox } from './components/ChatterBox';
 import { AgentModal } from './components/AgentModal';
 import { SimulationCanvas } from './components/SimulationCanvas';
+import { StatsPage } from './components/StatsPage';
 import type { Agent, LogEntry, ProviderType } from './engine/types';
 import { io } from 'socket.io-client';
 
@@ -44,6 +45,7 @@ export default function App() {
   const [serverDrift, setServerDrift] = useState<number>(0);
   const [villagerScore, setVillagerScore] = useState<number>(0);
   const [vampireScore, setVampireScore] = useState<number>(0);
+  const [showStats, setShowStats] = useState(false);
 
   const isOverlay = new URLSearchParams(window.location.search).has('overlay');
 
@@ -99,22 +101,27 @@ export default function App() {
 
   return (
     <>
-      {!isOverlay && <Header onNewAgent={() => setShowModal(true)} currentPhase={currentPhase} dayCount={dayCount} />}
-      <main className="main-content" style={isOverlay ? { padding: 0 } : undefined}>
-        <SimulationCanvas 
-          agents={agents} 
-          currentPhase={currentPhase} 
-          dayCount={dayCount}
-          phaseEndTime={phaseEndTime} 
-          voteLog={voteLog} 
-          votingKickOpen={votingKickOpen} 
-          voteResult={voteResult} 
-          serverDrift={serverDrift}
-          villagerScore={villagerScore}
-          vampireScore={vampireScore}
-        />
-        {!isOverlay && <ChatterBox logs={logs} />}
-      </main>
+      {!isOverlay && <Header onNewAgent={() => setShowModal(true)} currentPhase={currentPhase} dayCount={dayCount} onStats={() => setShowStats(!showStats)} showStats={showStats} />}
+      
+      {showStats ? (
+        <StatsPage />
+      ) : (
+        <main className="main-content" style={isOverlay ? { padding: 0 } : undefined}>
+          <SimulationCanvas 
+            agents={agents} 
+            currentPhase={currentPhase} 
+            dayCount={dayCount}
+            phaseEndTime={phaseEndTime} 
+            voteLog={voteLog} 
+            votingKickOpen={votingKickOpen} 
+            voteResult={voteResult} 
+            serverDrift={serverDrift}
+            villagerScore={villagerScore}
+            vampireScore={vampireScore}
+          />
+          {!isOverlay && <ChatterBox logs={logs} />}
+        </main>
+      )}
 
       {showModal && serverConfig && (
         <AgentModal 

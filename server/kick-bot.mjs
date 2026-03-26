@@ -12,22 +12,40 @@ export async function startKickBot({ engine, setSendToKick, broadcastState, getE
   const KICK_COOKIES  = process.env.KICK_COOKIES || '';
 
   let kickClient = null;
+  const messageQueue = [];
+  let isReady = false;
+
+  async function flushQueue() {
+    if (!isReady || !kickClient) return;
+    
+    while (messageQueue.length > 0) {
+      const msg = messageQueue.shift();
+      try {
+        await kickClient.sendMessage(msg);
+        console.log(`[KICK-DEBUG] Kuyruktan mesaj gönderildi!`);
+      } catch (e) {
+        console.error('[KICK-DEBUG] Kuyruk mesajı gönderilemedi:', e.message);
+      }
+    }
+  }
 
   async function sendToKick(agentName, targetAgent, message) {
     if (!kickClient) return;
+    
+    const targetLabel = targetAgent ? ` -> ${targetAgent}` : '';
+    const sanitized = String(message).replace(/[\n\r]+/g, ' '); 
+    const textToSend = `[${agentName}${targetLabel}]: ${sanitized}`;
+    const truncated = textToSend.length > 400 ? textToSend.substring(0, 397) + '...' : textToSend;
+    
+    // Eğer hazır değilse kuyruğa ekle
+    if (!isReady) {
+      console.log(`[KICK-DEBUG] Kanal hazır değil, mesaj kuyruğa ekleniyor (${messageQueue.length + 1} sırada)`);
+      messageQueue.push(truncated);
+      return;
+    }
+    
     try {
-      // Eğer login başarılı olmamışsa veya kanal hazır değilse bekleyelim
-      if (!kickClient.channelId) {
-        console.warn('[KICK-DEBUG] Uyarı: Kanal ID henüz hazır değil, mesaj bekletiliyor.');
-        return;
-      }
-      
-      const targetLabel = targetAgent ? ` -> ${targetAgent}` : '';
-      const sanitized = String(message).replace(/[\n\r]+/g, ' '); 
-      const textToSend = `[${agentName}${targetLabel}]: ${sanitized}`;
-      const truncated = textToSend.length > 400 ? textToSend.substring(0, 397) + '...' : textToSend;
-      
-      console.log(`[KICK-DEBUG] Mesaj gönderiliyor... (Kanal: ${KICK_CHANNEL})`);
+      console.log(`[KICK-DEBUG] Mesaj gönderiliyor... (Uzunluk: ${truncated.length})`);
       await kickClient.sendMessage(truncated);
       console.log(`[KICK-DEBUG] Mesaj başarıyla Kick chat'e iletildi!`);
     } catch (e) {
@@ -78,9 +96,17 @@ export async function startKickBot({ engine, setSendToKick, broadcastState, getE
 
   kickClient.on("ready", async () => {
     console.log(`✅ Kick Bot hazır! Kanal: ${KICK_CHANNEL}`);
+    console.log(`[KICK-DEBUG] channelId: ${kickClient.channelId}`);
+    console.log(`[KICK-DEBUG] kickClient keys:`, Object.keys(kickClient));
+    isReady = true;
+    // Kuyruktaki mesajları gönder
+    await flushQueue();
     try {
-      await kickClient.sendMessage(`🤖 AI Village is playing! Type '!vote AgentName' during voting phase. | Vampire Villager oynanıyor! Oylama fazında '!vote Ajanİsmi' yazarak vampiri seçin.`);
-    } catch (e) {}
+      await kickClient.sendMessage(`🤖 AI Village is playing! Type '!vote AgentName' during voting phase.`);
+      console.log('[KICK-DEBUG] Ready mesajı gönderildi!');
+    } catch (e) {
+      console.error('[KICK-DEBUG] Ready mesajı hatası:', e.message);
+    }
   });
 
   kickClient.on("ChatMessage", async (message) => {

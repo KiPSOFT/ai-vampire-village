@@ -73,7 +73,7 @@ export function getGlobalScores() {
   return { villagerWins, vampireWins };
 }
 
-// Detaylı istatistikler (isteğe bağlı, ilerde dashboard için kullanılabilir)
+// Detaylı istatistikler
 export function getDetailedStats() {
   const agentPerformance = db.prepare(`
     SELECT agent_name, model, role, COUNT(*) as play_count, SUM(is_winner) as win_count
@@ -82,4 +82,83 @@ export function getDetailedStats() {
   `).all();
 
   return { agentPerformance };
+}
+
+// Toplam oyun sayısı ve kazanan oranları
+export function getGameStats() {
+  const totalGames = db.prepare("SELECT COUNT(*) as count FROM games WHERE winner IS NOT NULL").get().count;
+  const villagerWins = db.prepare("SELECT COUNT(*) as count FROM games WHERE winner = 'villagers'").get().count;
+  const vampireWins = db.prepare("SELECT COUNT(*) as count FROM games WHERE winner = 'vampire'").get().count;
+  const avgDuration = db.prepare("SELECT AVG(duration_days) as avg FROM games WHERE winner IS NOT NULL").get().avg || 0;
+  
+  return {
+    totalGames,
+    villagerWins,
+    vampireWins,
+    villagerWinRate: totalGames > 0 ? ((villagerWins / totalGames) * 100).toFixed(1) : 0,
+    vampireWinRate: totalGames > 0 ? ((vampireWins / totalGames) * 100).toFixed(1) : 0,
+    avgDuration: avgDuration.toFixed(1)
+  };
+}
+
+// LLM model bazında rol dağılımı
+export function getModelRoleStats() {
+  return db.prepare(`
+    SELECT 
+      model,
+      role,
+      COUNT(*) as count
+    FROM agent_stats
+    GROUP BY model, role
+    ORDER BY model, role
+  `).all();
+}
+
+// LLM model bazında kazanma oranları
+export function getModelWinStats() {
+  return db.prepare(`
+    SELECT 
+      model,
+      role,
+      COUNT(*) as total_games,
+      SUM(is_winner) as wins,
+      ROUND((SUM(is_winner) * 100.0 / COUNT(*)), 1) as win_rate
+    FROM agent_stats
+    GROUP BY model, role
+    ORDER BY model, role
+  `).all();
+}
+
+// Son oyunlar
+export function getRecentGames(limit = 20) {
+  return db.prepare(`
+    SELECT 
+      g.id,
+      g.winner,
+      g.duration_days,
+      g.created_at,
+      (SELECT COUNT(*) FROM agent_stats WHERE game_id = g.id) as player_count
+    FROM games g
+    WHERE g.winner IS NOT NULL
+    ORDER BY g.created_at DESC
+    LIMIT ?
+  `).all(limit);
+}
+
+// Model bazında toplam performans
+export function getModelOverallStats() {
+  return db.prepare(`
+    SELECT 
+      model,
+      COUNT(*) as total_games,
+      SUM(is_winner) as total_wins,
+      ROUND((SUM(is_winner) * 100.0 / COUNT(*)), 1) as win_rate,
+      SUM(CASE WHEN role = 'VAMPIRE' THEN 1 ELSE 0 END) as vampire_games,
+      SUM(CASE WHEN role = 'INNOCENT' THEN 1 ELSE 0 END) as innocent_games,
+      SUM(CASE WHEN role = 'VAMPIRE' AND is_winner = 1 THEN 1 ELSE 0 END) as vampire_wins,
+      SUM(CASE WHEN role = 'INNOCENT' AND is_winner = 1 THEN 1 ELSE 0 END) as innocent_wins
+    FROM agent_stats
+    GROUP BY model
+    ORDER BY win_rate DESC
+  `).all();
 }

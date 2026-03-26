@@ -10,7 +10,7 @@ import { getOpenRouterDecision } from './api/openrouter.mjs';
 import { getGroqDecision } from './api/groq.mjs';
 import { GRID_SIZE, AGENT_PERSONAS, COLORS, PHASES, ROLES, ZONES } from '../shared/types.mjs';
 import { startKickBot } from './kick-bot.mjs';
-import { initDb, createGameRecord, updateGameResult, addAgentGameStat, addViewerVote, getGlobalScores } from './db.mjs';
+import { initDb, createGameRecord, updateGameResult, addAgentGameStat, addViewerVote, getGlobalScores, getGameStats, getModelRoleStats, getModelWinStats, getRecentGames, getModelOverallStats } from './db.mjs';
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 initDb();
@@ -357,6 +357,24 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log(`🔌 Client ayrıldı: ${socket.id}`);
   });
+});
+
+// ─── Stats API Endpoints ───
+app.get('/api/stats/games', (req, res) => {
+  res.json(getGameStats());
+});
+
+app.get('/api/stats/models', (req, res) => {
+  res.json(getModelOverallStats());
+});
+
+app.get('/api/stats/model-wins', (req, res) => {
+  res.json(getModelWinStats());
+});
+
+app.get('/api/stats/recent-games', (req, res) => {
+  const limit = parseInt(req.query.limit) || 20;
+  res.json(getRecentGames(limit));
 });
 
 // ─── Start ───
