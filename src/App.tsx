@@ -8,8 +8,8 @@ import { StatsPage } from './components/StatsPage';
 import type { Agent, LogEntry, ProviderType } from './engine/types';
 import { io } from 'socket.io-client';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-const socket = io(API_URL);
+const WS_URL  = import.meta.env.VITE_WS_URL  || 'http://localhost:3001';
+const socket = io(WS_URL);
 
 export interface ServerConfig {
   ollamaModel: string;
