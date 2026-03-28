@@ -3,7 +3,7 @@ import { X, Loader } from 'lucide-react';
 import { fetchModels } from '../api/groq';
 import type { GroqModel } from '../api/groq';
 import type { ProviderType } from '../engine/types';
-import { AGENT_PERSONAS } from '../../shared/types.mjs';
+import { AGENT_PERSONAS } from '../../shared/types';
 import type { ServerConfig } from '../App';
 
 interface AgentModalProps {
