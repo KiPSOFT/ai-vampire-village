@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Header } from './components/Header';
 import { ChatterBox } from './components/ChatterBox';
 import { AgentModal } from './components/AgentModal';
@@ -9,21 +10,6 @@ import { io } from 'socket.io-client';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 const socket = io(API_URL);
-
-/*
-export const AGENT_PERSONAS = [
-  { name: "Asta", description: "A regular barista by day, the city's most dangerous white-hat hacker by night." },
-  { name: "Odi", description: "A librarian who prefers the smell of old books to people, quiet but memorizes every detail around." },
-  { name: "Shirley", description: "An incurable optimist who always carries a joke in her pocket and an unbreakable smile, even in the most chaotic moments." },
-  { name: "Jesi", description: "A rebellious traveler who believes rules only exist to be bent, determined to travel the world with just a backpack." },
-  { name: "Sahara", description: "A sharp-tongued data analyst who believes in statistics and cold facts more than people's feelings." },
-  { name: "Lumi", description: "An eccentric artist who tries to make sense of the world through neon colors splashed on canvases, not words." },
-  { name: "Kira", description: "An ambitious and unbeatable e-sports player who conquers kingdoms in digital worlds to escape real-life problems." },
-  { name: "Tera", description: "A modern healer who lives by the rhythm of nature, completely isolated from technology, and talks to plants." },
-  { name: "Echo", description: "A born leader and entrepreneur who ruthlessly destroys obstacles on the path to success with pure intellect." },
-  { name: "Nova", description: "A nostalgia enthusiast who constantly listens to 80s music and always seems ready to pull a cassette player from her pocket." }
-];
-*/
 
 export interface ServerConfig {
   ollamaModel: string;
@@ -46,7 +32,10 @@ export default function App() {
   const [serverDrift, setServerDrift] = useState<number>(0);
   const [villagerScore, setVillagerScore] = useState<number>(0);
   const [vampireScore, setVampireScore] = useState<number>(0);
-  const [showStats, setShowStats] = useState(false);
+
+  const navigate = useNavigate();
+  const location = useLocation();
+  const showStats = location.pathname === '/stats';
 
   const isOverlay = new URLSearchParams(window.location.search).has('overlay');
 
@@ -100,29 +89,38 @@ export default function App() {
     setShowModal(false);
   };
 
+  const handleStatsToggle = () => {
+    if (showStats) {
+      navigate('/');
+    } else {
+      navigate('/stats');
+    }
+  };
+
   return (
     <>
-      {!isOverlay && <Header onNewAgent={() => setShowModal(true)} currentPhase={currentPhase} dayCount={dayCount} onStats={() => setShowStats(!showStats)} showStats={showStats} />}
-      
-      {showStats ? (
-        <StatsPage />
-      ) : (
-        <main className="main-content" style={isOverlay ? { padding: 0 } : undefined}>
-          <SimulationCanvas 
-            agents={agents} 
-            currentPhase={currentPhase} 
-            dayCount={dayCount}
-            phaseEndTime={phaseEndTime} 
-            voteLog={voteLog} 
-            votingKickOpen={votingKickOpen} 
-            voteResult={voteResult} 
-            serverDrift={serverDrift}
-            villagerScore={villagerScore}
-            vampireScore={vampireScore}
-          />
-          {!isOverlay && <ChatterBox logs={logs} />}
-        </main>
-      )}
+      {!isOverlay && <Header onNewAgent={() => setShowModal(true)} currentPhase={currentPhase} dayCount={dayCount} onStats={handleStatsToggle} showStats={showStats} />}
+
+      <Routes>
+        <Route path="/stats" element={<StatsPage />} />
+        <Route path="*" element={
+          <main className="main-content" style={isOverlay ? { padding: 0 } : undefined}>
+            <SimulationCanvas 
+              agents={agents} 
+              currentPhase={currentPhase} 
+              dayCount={dayCount}
+              phaseEndTime={phaseEndTime} 
+              voteLog={voteLog} 
+              votingKickOpen={votingKickOpen} 
+              voteResult={voteResult} 
+              serverDrift={serverDrift}
+              villagerScore={villagerScore}
+              vampireScore={vampireScore}
+            />
+            {!isOverlay && <ChatterBox logs={logs} />}
+          </main>
+        } />
+      </Routes>
 
       {showModal && serverConfig && (
         <AgentModal 
@@ -134,3 +132,4 @@ export default function App() {
     </>
   );
 }
+

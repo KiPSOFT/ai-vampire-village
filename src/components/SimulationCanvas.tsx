@@ -460,6 +460,17 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({ agents, curr
 
   return (
     <div className="canvas-container glass-panel" style={{ position: 'relative' }}>
+      <style>{`
+        @keyframes viewer-vote-pulse {
+          0%, 100% { text-shadow: 0 0 18px #fbbf24, 0 0 40px #f59e0b; opacity: 1; }
+          50%       { text-shadow: 0 0 36px #fbbf24, 0 0 80px #f59e0b; opacity: 0.75; }
+        }
+        @keyframes viewer-vote-icon-bounce {
+          0%, 100% { transform: translateY(0); }
+          50%       { transform: translateY(-10px); }
+        }
+      `}</style>
+
       {currentPhase === 'NIGHT' && (
         <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 10, pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <h2 style={{ color: '#ef4444', fontSize: '3.5rem', fontFamily: 'Inter', textShadow: '0 0 10px black', textAlign: 'center', margin: 0 }}>NIGHT PHASE</h2>
@@ -467,6 +478,79 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({ agents, curr
 
           <h2 style={{ color: '#ef4444', fontSize: '3.5rem', fontFamily: 'Inter', textShadow: '0 0 10px black', textAlign: 'center', margin: '40px 0 0 0' }}>GECE FAZI</h2>
           <h3 style={{ color: '#ef4444', fontSize: '2rem', fontFamily: 'Inter', textShadow: '0 0 8px black', textAlign: 'center', marginTop: 10 }}>(Vampir seçiyor...)</h3>
+        </div>
+      )}
+
+      {currentPhase === 'VOTING' && votingKickOpen && (
+        <div style={{
+          position: 'absolute', inset: 0,
+          backgroundColor: 'rgba(0,0,0,0.82)',
+          zIndex: 10, pointerEvents: 'none',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          gap: 0,
+        }}>
+          <div style={{
+            animation: 'viewer-vote-icon-bounce 1.4s ease-in-out infinite',
+            fontSize: '5rem',
+            marginBottom: 12,
+          }}>🗳️</div>
+
+          <h2 style={{
+            color: '#fbbf24',
+            fontSize: '3.8rem',
+            fontFamily: 'Inter',
+            fontWeight: 900,
+            textAlign: 'center',
+            margin: 0,
+            animation: 'viewer-vote-pulse 1.6s ease-in-out infinite',
+          }}>
+            VIEWER VOTE TIME!
+          </h2>
+          <h3 style={{
+            color: '#fde68a',
+            fontSize: '2rem',
+            fontFamily: 'Inter',
+            fontWeight: 600,
+            textAlign: 'center',
+            marginTop: 10,
+            marginBottom: 0,
+            textShadow: '0 0 8px #f59e0b',
+          }}>
+            Cast your vote in Kick chat!
+          </h3>
+
+          <div style={{
+            width: 280,
+            height: 3,
+            background: 'linear-gradient(90deg, transparent, #fbbf24, transparent)',
+            margin: '28px 0',
+            borderRadius: 3,
+          }} />
+
+          <h2 style={{
+            color: '#fbbf24',
+            fontSize: '3.8rem',
+            fontFamily: 'Inter',
+            fontWeight: 900,
+            textAlign: 'center',
+            margin: 0,
+            animation: 'viewer-vote-pulse 1.6s ease-in-out infinite',
+            animationDelay: '0.8s',
+          }}>
+            İZLEYİCİ OY ZAMANI!
+          </h2>
+          <h3 style={{
+            color: '#fde68a',
+            fontSize: '2rem',
+            fontFamily: 'Inter',
+            fontWeight: 600,
+            textAlign: 'center',
+            marginTop: 10,
+            textShadow: '0 0 8px #f59e0b',
+          }}>
+            Kick sohbetinde oyunu kullan!
+          </h3>
         </div>
       )}
       {currentPhase === 'VOTING_RESULT' && voteResult && (

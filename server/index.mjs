@@ -168,7 +168,7 @@ export function setSendToKick(fn) {
 }
 
 // ─── Simulation tick loop ───
-const TICK_RATE = 5000;
+const TICK_RATE = 10000; // 10 seconds between agent actions
 let isFetching = false;
 let currentSpeakerIndex = 0;
 
