@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import {
+  PieChart, Pie, Cell,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
 
 interface GameStats {
   totalGames: number;
@@ -29,6 +32,11 @@ interface RecentGame {
   player_count: number;
 }
 
+const shortModel = (model: string) =>
+  model.split('/').pop()?.replace(/:.*/, '').replace(/-\d{4}.*/, '') ?? model;
+
+const COLORS_PIE = ['#4ade80', '#ef4444'];
+
 export function StatsPage() {
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
   const [gameStats, setGameStats] = useState<GameStats | null>(null);
@@ -44,7 +52,6 @@ export function StatsPage() {
           fetch(`${API_URL}/api/stats/models`),
           fetch(`${API_URL}/api/stats/recent-games?limit=20`)
         ]);
-        
         setGameStats(await gamesRes.json());
         setModelStats(await modelsRes.json());
         setRecentGames(await recentRes.json());
@@ -54,17 +61,8 @@ export function StatsPage() {
         setLoading(false);
       }
     };
-    
     fetchData();
   }, []);
-
-  if (loading) {
-    return (
-      <div className="stats-page" style={{ padding: 40, textAlign: 'center' }}>
-        <h2>Loading statistics...</h2>
-      </div>
-    );
-  }
 
   const winRateData = gameStats ? [
     { name: 'Villagers', value: gameStats.villagerWins, color: '#4ade80' },
@@ -72,207 +70,303 @@ export function StatsPage() {
   ] : [];
 
   const modelWinRateData = modelStats.map(m => ({
-    name: m.model.split('/').pop()?.replace(/-instruct.*/, '').substring(0, 15) || m.model,
-    winRate: m.win_rate,
-    totalGames: m.total_games
+    name: shortModel(m.model),
+    'Win Rate': m.win_rate,
+    Games: m.total_games,
   }));
 
   const modelRoleData = modelStats.map(m => ({
-    name: m.model.split('/').pop()?.replace(/-instruct.*/, '').substring(0, 15) || m.model,
-    vampire: m.vampire_games,
-    innocent: m.innocent_games
+    name: shortModel(m.model),
+    Innocent: m.innocent_games,
+    Vampire: m.vampire_games,
   }));
 
   const modelWinByRoleData = modelStats.map(m => ({
-    name: m.model.split('/').pop()?.replace(/-instruct.*/, '').substring(0, 15) || m.model,
-    vampireWins: m.vampire_wins,
-    innocentWins: m.innocent_wins
+    name: shortModel(m.model),
+    'Innocent Wins': m.innocent_wins,
+    'Vampire Wins': m.vampire_wins,
   }));
 
   return (
-    <div className="stats-page glass-panel" style={{ padding: 24, maxWidth: 1400, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 28, marginBottom: 32, color: '#fff' }}>📊 AI Vampire Village Statistics</h1>
-      
-      {/* Overview Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
-        <div className="glass-panel" style={{ padding: 20, textAlign: 'center' }}>
-          <div style={{ fontSize: 14, color: '#aaa', marginBottom: 8 }}>Total Games</div>
-          <div style={{ fontSize: 36, fontWeight: 'bold', color: '#fff' }}>{gameStats?.totalGames || 0}</div>
-        </div>
-        <div className="glass-panel" style={{ padding: 20, textAlign: 'center' }}>
-          <div style={{ fontSize: 14, color: '#aaa', marginBottom: 8 }}>Avg Duration</div>
-          <div style={{ fontSize: 36, fontWeight: 'bold', color: '#fff' }}>{gameStats?.avgDuration || 0}</div>
-          <div style={{ fontSize: 12, color: '#888' }}>days</div>
-        </div>
-        <div className="glass-panel" style={{ padding: 20, textAlign: 'center', background: 'rgba(74, 222, 128, 0.1)' }}>
-          <div style={{ fontSize: 14, color: '#4ade80', marginBottom: 8 }}>🧑‍🌾 Villagers Win Rate</div>
-          <div style={{ fontSize: 36, fontWeight: 'bold', color: '#4ade80' }}>{gameStats?.villagerWinRate || 0}%</div>
-        </div>
-        <div className="glass-panel" style={{ padding: 20, textAlign: 'center', background: 'rgba(239, 68, 68, 0.1)' }}>
-          <div style={{ fontSize: 14, color: '#ef4444', marginBottom: 8 }}>🧛 Vampire Win Rate</div>
-          <div style={{ fontSize: 36, fontWeight: 'bold', color: '#ef4444' }}>{gameStats?.vampireWinRate || 0}%</div>
+    <div style={{
+      flex: 1,
+      overflowY: 'auto',
+      padding: '24px 32px 48px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 32,
+    }}>
+      {/* ── Header ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <span style={{ fontSize: '2rem' }}>📊</span>
+        <div>
+          <h1 style={{ fontSize: 26, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>
+            AI Vampire Village — Statistics
+          </h1>
+          <p style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>
+            LLM model performance across all games
+          </p>
         </div>
       </div>
 
-      {/* Charts Row 1 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24, marginBottom: 32 }}>
-        {/* Win Rate Pie Chart */}
-        <div className="glass-panel" style={{ padding: 20 }}>
-          <h3 style={{ marginBottom: 16, color: '#fff' }}>Overall Win Distribution</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie
-                data={winRateData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name}: ${((percent || 0) * 100).toFixed(0)}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {winRateData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+      {loading ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, gap: 12, color: '#94a3b8', fontSize: 16 }}>
+          <span style={{ fontSize: 28, animation: 'spin 1s linear infinite', display: 'inline-block' }}>⏳</span>
+          Loading statistics...
         </div>
+      ) : (
+        <>
+          {/* ── Overview Cards ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
+            {[
+              { label: 'Total Games', value: gameStats?.totalGames ?? 0, icon: '🎮', color: '#6366f1' },
+              { label: 'Avg Duration', value: `${gameStats?.avgDuration ?? 0} days`, icon: '📅', color: '#8b5cf6' },
+              { label: 'Villager Win Rate', value: `${gameStats?.villagerWinRate ?? 0}%`, icon: '🧑‍🌾', color: '#4ade80' },
+              { label: 'Vampire Win Rate', value: `${gameStats?.vampireWinRate ?? 0}%`, icon: '🧛', color: '#ef4444' },
+            ].map(card => (
+              <div key={card.label} style={{
+                background: 'rgba(20,22,30,0.7)',
+                border: '1px solid rgba(255,255,255,0.07)',
+                borderRadius: 16,
+                padding: '20px 24px',
+                backdropFilter: 'blur(12px)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 6,
+                boxShadow: `0 0 0 1px ${card.color}22, 0 4px 24px rgba(0,0,0,0.3)`,
+              }}>
+                <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  {card.icon} {card.label}
+                </div>
+                <div style={{ fontSize: 34, fontWeight: 800, color: card.color, lineHeight: 1.1 }}>
+                  {card.value}
+                </div>
+              </div>
+            ))}
+          </div>
 
-        {/* Model Win Rate Bar Chart */}
-        <div className="glass-panel" style={{ padding: 20 }}>
-          <h3 style={{ marginBottom: 16, color: '#fff' }}>Win Rate by LLM Model</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={modelWinRateData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-              <XAxis dataKey="name" stroke="#888" fontSize={10} angle={-45} textAnchor="end" height={60} />
-              <YAxis stroke="#888" />
-              <Tooltip 
-                contentStyle={{ background: '#1a1a2e', border: 'none', borderRadius: 8 }}
-                labelStyle={{ color: '#fff' }}
-              />
-              <Bar dataKey="winRate" fill="#6366f1" name="Win Rate %" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+          {/* ── Charts Row 1 ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 20 }}>
+            {/* Pie */}
+            <ChartCard title="Overall Win Distribution">
+              <ResponsiveContainer width="100%" height={220}>
+                <PieChart>
+                  <Pie
+                    data={winRateData}
+                    cx="50%" cy="50%"
+                    innerRadius={55} outerRadius={85}
+                    paddingAngle={4}
+                    dataKey="value"
+                    label={({ name, percent }) => `${name}: ${((percent || 0) * 100).toFixed(0)}%`}
+                    labelLine={false}
+                  >
+                    {winRateData.map((_entry, i) => (
+                      <Cell key={i} fill={COLORS_PIE[i % COLORS_PIE.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={tooltipStyle} itemStyle={{ color: '#e2e8f0' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            {/* Win Rate by Model */}
+            <ChartCard title="Win Rate by Model (%)">
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={modelWinRateData} margin={{ top: 4, right: 8, left: -16, bottom: 60 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                  <XAxis dataKey="name" stroke="#475569" tick={{ fill: '#94a3b8', fontSize: 11 }} angle={-40} textAnchor="end" interval={0} />
+                  <YAxis stroke="#475569" tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                  <Tooltip contentStyle={tooltipStyle} itemStyle={{ color: '#e2e8f0' }} />
+                  <Bar dataKey="Win Rate" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
+          </div>
+
+          {/* ── Charts Row 2 ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 20 }}>
+            <ChartCard title="Role Distribution by Model">
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={modelRoleData} margin={{ top: 4, right: 8, left: -16, bottom: 60 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                  <XAxis dataKey="name" stroke="#475569" tick={{ fill: '#94a3b8', fontSize: 11 }} angle={-40} textAnchor="end" interval={0} />
+                  <YAxis stroke="#475569" tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                  <Tooltip contentStyle={tooltipStyle} itemStyle={{ color: '#e2e8f0' }} />
+                  <Legend wrapperStyle={{ color: '#94a3b8', fontSize: 12, paddingTop: 8 }} />
+                  <Bar dataKey="Innocent" stackId="a" fill="#4ade80" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="Vampire" stackId="a" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="Wins by Role & Model">
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={modelWinByRoleData} margin={{ top: 4, right: 8, left: -16, bottom: 60 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                  <XAxis dataKey="name" stroke="#475569" tick={{ fill: '#94a3b8', fontSize: 11 }} angle={-40} textAnchor="end" interval={0} />
+                  <YAxis stroke="#475569" tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                  <Tooltip contentStyle={tooltipStyle} itemStyle={{ color: '#e2e8f0' }} />
+                  <Legend wrapperStyle={{ color: '#94a3b8', fontSize: 12, paddingTop: 8 }} />
+                  <Bar dataKey="Innocent Wins" fill="#4ade80" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Vampire Wins" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
+          </div>
+
+          {/* ── Model Leaderboard Table ── */}
+          <div style={{
+            background: 'rgba(20,22,30,0.7)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: 16,
+            backdropFilter: 'blur(12px)',
+            overflow: 'hidden',
+          }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>🏆 Model Performance Leaderboard</h3>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
+                <thead>
+                  <tr style={{ background: 'rgba(0,0,0,0.3)' }}>
+                    {['Model', 'Games', 'Wins', 'Win Rate', '🧛 Vamp G', '🧛 Vamp W', '🧑‍🌾 Inn G', '🧑‍🌾 Inn W'].map(h => (
+                      <th key={h} style={{ padding: '12px 16px', textAlign: h === 'Model' ? 'left' : 'center', fontSize: 11, fontWeight: 600, color: '#64748b', letterSpacing: '0.06em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {modelStats.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} style={{ padding: 32, textAlign: 'center', color: '#475569', fontSize: 14 }}>
+                        No data yet
+                      </td>
+                    </tr>
+                  ) : modelStats.map((m, i) => (
+                    <tr key={i} style={{ borderTop: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.15s' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <td style={{ padding: '14px 16px' }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0' }}>{shortModel(m.model)}</div>
+                        <div style={{ fontSize: 11, color: '#475569', marginTop: 2, fontFamily: 'monospace', maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={m.model}>
+                          {m.model}
+                        </div>
+                      </td>
+                      <td style={{ textAlign: 'center', padding: '14px 16px', color: '#94a3b8', fontSize: 13 }}>{m.total_games}</td>
+                      <td style={{ textAlign: 'center', padding: '14px 16px', color: '#94a3b8', fontSize: 13 }}>{m.total_wins}</td>
+                      <td style={{ textAlign: 'center', padding: '14px 16px' }}>
+                        <span style={{
+                          display: 'inline-block',
+                          padding: '3px 10px',
+                          borderRadius: 20,
+                          fontSize: 12,
+                          fontWeight: 700,
+                          background: m.win_rate > 50 ? 'rgba(74,222,128,0.15)' : m.win_rate > 30 ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)',
+                          color: m.win_rate > 50 ? '#4ade80' : m.win_rate > 30 ? '#f59e0b' : '#ef4444',
+                        }}>
+                          {m.win_rate}%
+                        </span>
+                      </td>
+                      <td style={{ textAlign: 'center', padding: '14px 16px', color: '#ef4444', fontSize: 13 }}>{m.vampire_games}</td>
+                      <td style={{ textAlign: 'center', padding: '14px 16px', color: '#ef4444', fontSize: 13 }}>{m.vampire_wins}</td>
+                      <td style={{ textAlign: 'center', padding: '14px 16px', color: '#4ade80', fontSize: 13 }}>{m.innocent_games}</td>
+                      <td style={{ textAlign: 'center', padding: '14px 16px', color: '#4ade80', fontSize: 13 }}>{m.innocent_wins}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* ── Recent Games ── */}
+          <div style={{
+            background: 'rgba(20,22,30,0.7)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: 16,
+            backdropFilter: 'blur(12px)',
+            overflow: 'hidden',
+          }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>🕐 Recent Games</h3>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 500 }}>
+                <thead>
+                  <tr style={{ background: 'rgba(0,0,0,0.3)' }}>
+                    {['#', 'Winner', 'Duration', 'Players', 'Date'].map(h => (
+                      <th key={h} style={{ padding: '12px 16px', textAlign: h === '#' || h === 'Date' ? 'left' : 'center', fontSize: 11, fontWeight: 600, color: '#64748b', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentGames.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} style={{ padding: 32, textAlign: 'center', color: '#475569', fontSize: 14 }}>
+                        No games yet
+                      </td>
+                    </tr>
+                  ) : recentGames.map((g, i) => (
+                    <tr key={i} style={{ borderTop: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.15s' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <td style={{ padding: '13px 16px', color: '#475569', fontSize: 12, fontFamily: 'monospace' }}>#{g.id}</td>
+                      <td style={{ textAlign: 'center', padding: '13px 16px' }}>
+                        <span style={{
+                          padding: '4px 14px',
+                          borderRadius: 20,
+                          fontSize: 12,
+                          fontWeight: 700,
+                          background: g.winner === 'villagers' ? 'rgba(74,222,128,0.15)' : 'rgba(239,68,68,0.15)',
+                          color: g.winner === 'villagers' ? '#4ade80' : '#ef4444',
+                        }}>
+                          {g.winner === 'villagers' ? '🧑‍🌾 Villagers' : '🧛 Vampire'}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: 'center', padding: '13px 16px', color: '#94a3b8', fontSize: 13 }}>{g.duration_days}d</td>
+                      <td style={{ textAlign: 'center', padding: '13px 16px', color: '#94a3b8', fontSize: 13 }}>{g.player_count}</td>
+                      <td style={{ padding: '13px 16px', color: '#64748b', fontSize: 12 }}>{new Date(g.created_at).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div style={{
+      background: 'rgba(20,22,30,0.7)',
+      border: '1px solid rgba(255,255,255,0.07)',
+      borderRadius: 16,
+      backdropFilter: 'blur(12px)',
+      overflow: 'hidden',
+    }}>
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <h3 style={{ fontSize: 13, fontWeight: 600, color: '#94a3b8', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+          {title}
+        </h3>
       </div>
-
-      {/* Charts Row 2 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24, marginBottom: 32 }}>
-        {/* Role Distribution by Model */}
-        <div className="glass-panel" style={{ padding: 20 }}>
-          <h3 style={{ marginBottom: 16, color: '#fff' }}>Role Distribution by Model</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={modelRoleData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-              <XAxis dataKey="name" stroke="#888" fontSize={10} angle={-45} textAnchor="end" height={60} />
-              <YAxis stroke="#888" />
-              <Tooltip 
-                contentStyle={{ background: '#1a1a2e', border: 'none', borderRadius: 8 }}
-                labelStyle={{ color: '#fff' }}
-              />
-              <Legend />
-              <Bar dataKey="innocent" stackId="a" fill="#4ade80" name="Innocent" />
-              <Bar dataKey="vampire" stackId="a" fill="#ef4444" name="Vampire" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Wins by Role */}
-        <div className="glass-panel" style={{ padding: 20 }}>
-          <h3 style={{ marginBottom: 16, color: '#fff' }}>Wins by Role & Model</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={modelWinByRoleData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-              <XAxis dataKey="name" stroke="#888" fontSize={10} angle={-45} textAnchor="end" height={60} />
-              <YAxis stroke="#888" />
-              <Tooltip 
-                contentStyle={{ background: '#1a1a2e', border: 'none', borderRadius: 8 }}
-                labelStyle={{ color: '#fff' }}
-              />
-              <Legend />
-              <Bar dataKey="innocentWins" fill="#4ade80" name="Innocent Wins" />
-              <Bar dataKey="vampireWins" fill="#ef4444" name="Vampire Wins" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Model Performance Table */}
-      <div className="glass-panel" style={{ padding: 20, marginBottom: 32 }}>
-        <h3 style={{ marginBottom: 16, color: '#fff' }}>🏆 Model Performance Leaderboard</h3>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid #333' }}>
-                <th style={{ textAlign: 'left', padding: 12, color: '#888' }}>Model</th>
-                <th style={{ textAlign: 'center', padding: 12, color: '#888' }}>Games</th>
-                <th style={{ textAlign: 'center', padding: 12, color: '#888' }}>Wins</th>
-                <th style={{ textAlign: 'center', padding: 12, color: '#888' }}>Win Rate</th>
-                <th style={{ textAlign: 'center', padding: 12, color: '#888' }}>🧛 Vamp Games</th>
-                <th style={{ textAlign: 'center', padding: 12, color: '#888' }}>🧛 Vamp Wins</th>
-                <th style={{ textAlign: 'center', padding: 12, color: '#888' }}>🧑‍🌾 Innocent Games</th>
-                <th style={{ textAlign: 'center', padding: 12, color: '#888' }}>🧑‍🌾 Innocent Wins</th>
-              </tr>
-            </thead>
-            <tbody>
-              {modelStats.map((m, i) => (
-                <tr key={i} style={{ borderBottom: '1px solid #222' }}>
-                  <td style={{ padding: 12, color: '#fff' }}>{m.model}</td>
-                  <td style={{ textAlign: 'center', padding: 12, color: '#ccc' }}>{m.total_games}</td>
-                  <td style={{ textAlign: 'center', padding: 12, color: '#ccc' }}>{m.total_wins}</td>
-                  <td style={{ textAlign: 'center', padding: 12, color: m.win_rate > 50 ? '#4ade80' : m.win_rate > 30 ? '#f59e0b' : '#ef4444', fontWeight: 'bold' }}>
-                    {m.win_rate}%
-                  </td>
-                  <td style={{ textAlign: 'center', padding: 12, color: '#ef4444' }}>{m.vampire_games}</td>
-                  <td style={{ textAlign: 'center', padding: 12, color: '#ef4444' }}>{m.vampire_wins}</td>
-                  <td style={{ textAlign: 'center', padding: 12, color: '#4ade80' }}>{m.innocent_games}</td>
-                  <td style={{ textAlign: 'center', padding: 12, color: '#4ade80' }}>{m.innocent_wins}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Recent Games */}
-      <div className="glass-panel" style={{ padding: 20 }}>
-        <h3 style={{ marginBottom: 16, color: '#fff' }}>🕐 Recent Games</h3>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid #333' }}>
-                <th style={{ textAlign: 'left', padding: 12, color: '#888' }}>Game ID</th>
-                <th style={{ textAlign: 'center', padding: 12, color: '#888' }}>Winner</th>
-                <th style={{ textAlign: 'center', padding: 12, color: '#888' }}>Duration</th>
-                <th style={{ textAlign: 'center', padding: 12, color: '#888' }}>Players</th>
-                <th style={{ textAlign: 'left', padding: 12, color: '#888' }}>Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentGames.map((g, i) => (
-                <tr key={i} style={{ borderBottom: '1px solid #222' }}>
-                  <td style={{ padding: 12, color: '#888' }}>#{g.id}</td>
-                  <td style={{ textAlign: 'center', padding: 12 }}>
-                    <span style={{ 
-                      padding: '4px 12px', 
-                      borderRadius: 12, 
-                      background: g.winner === 'villagers' ? 'rgba(74, 222, 128, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                      color: g.winner === 'villagers' ? '#4ade80' : '#ef4444'
-                    }}>
-                      {g.winner === 'villagers' ? '🧑‍🌾 Villagers' : '🧛 Vampire'}
-                    </span>
-                  </td>
-                  <td style={{ textAlign: 'center', padding: 12, color: '#ccc' }}>{g.duration_days} days</td>
-                  <td style={{ textAlign: 'center', padding: 12, color: '#ccc' }}>{g.player_count}</td>
-                  <td style={{ padding: 12, color: '#888' }}>{new Date(g.created_at).toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <div style={{ padding: '16px 20px 8px' }}>
+        {children}
       </div>
     </div>
   );
 }
+
+const tooltipStyle: React.CSSProperties = {
+  background: '#0f172a',
+  border: '1px solid rgba(255,255,255,0.1)',
+  borderRadius: 10,
+  color: '#e2e8f0',
+  fontSize: 13,
+};
