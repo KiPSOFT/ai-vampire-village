@@ -35,7 +35,7 @@ function getNextOpenRouterModel() {
 // ─── Server setup ───
 const app = express();
 const httpServer = createServer(app);
-const io = new Server(httpServer, { cors: { origin: '*' } });
+const io = new Server(httpServer, { cors: { origin: '*' }, path: '/ws/socket.io' });
 
 // ─── Simulation state ───
 let engine = null;

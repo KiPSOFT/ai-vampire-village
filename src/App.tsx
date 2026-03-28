@@ -9,7 +9,8 @@ import type { Agent, LogEntry, ProviderType } from './engine/types';
 import { io } from 'socket.io-client';
 
 const WS_URL  = import.meta.env.VITE_WS_URL  || 'http://localhost:3001';
-const socket = io(WS_URL);
+const WS_PATH = import.meta.env.VITE_WS_PATH || '/socket.io';
+const socket = io(WS_URL, { path: WS_PATH });
 
 export interface ServerConfig {
   ollamaModel: string;
